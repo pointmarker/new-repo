@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODOS PAGE</title>
+</head>
+<body>
+    <div id="tasks-container">
+        <div id="task-count-container"></div>
+        <div id="task-sorting-container">
+            <select id="sorting-select">
+                <option value="a-z">a'dan z'ye</option>
+                <option value="z-a">z'den a'ya</option>
+                <option value="uncompleted-first">önce tamamlanmayanlar</option>
+                <option value="completed-first">önce tamamlananlar</option>
+                <option value="news-first">önce yeniler</option>
+                <option value="olds-first">önce eskiler</option>
+            </select>
+        </div>
+        <div id="tasks">
+            <style>
+                .task-title{
+                    cursor: pointer
+                }
+            </style>
+            <div class="task-element">
+                <h2 class="task-title">new task</h2>
+                <label for="completed">completed</label>
+                <input type="radio" name="completed">
+            </div>
+        </div>
+    </div>
+    <div id="navigation-container">
+        <style>
+            td{
+              border:2px solid;   
+              cursor: pointer;
+            }
+            table{
+                border: 1px solid;
+            }
+        </style>
+        <table id="pages-navigation">
+        </table>
+        <div id="limit-navigation">
+            <select id="limit-selections">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+    </div>
+    <script src="../js/todos.js">
+      
+    </script>
+</body>
+</html>

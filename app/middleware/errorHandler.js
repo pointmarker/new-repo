@@ -1,3 +1,4 @@
+const { source_path } = require('../environment/environment')
 const {AppError, ValidationError, NotFoundError, DatabaseError}= require('../services/error.service')
 
 function errorHandler(err,req,res,next){
@@ -30,5 +31,16 @@ function errorHandler(err,req,res,next){
     res.status(statusCode).json(response)
 }
 
+function fourOFourHandler(req,res,next){
+ if(req.accepts('json')){
+    return res.status(404).json({
+        success:false,
+        message: "route not found"
+    })
+ }else{
+    return res.status(404).sendFile(source_path,"services/error.html")
+ }
+}
 
-exports.module = {errorHandler}
+
+module.exports = {errorHandler, fourOFourHandler}

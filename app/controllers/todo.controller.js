@@ -1,3 +1,3 @@
-exports.getTodoController = () => {
-    
+exports.getTodoController = (req,res,next) => {
+
 }

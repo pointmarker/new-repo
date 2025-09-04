@@ -11,17 +11,12 @@ const newTaskSchema = () => {
         createdAt: joiDate.date().format('YYYY-MM-DD').required()
     })
 }
-const updateTaskNameSchema = () => {
-    return joi.object({
-        title: joi.string().min(1).max(100).alphanum().required()
+const updateTaskSchema = () => {
+    joi.object({
+        title: joi.string().min(1).max(100).alphanum(),
+        completed: joi.boolean()
     })
 }
-const updateCompletenessSchema = () => {
-    return joi.object({
-        completed: joi.boolean().required()
-    })
-}
-
 const idSchema = () => {
     joi.object({
         id: joi.objectId().required()
@@ -56,7 +51,6 @@ const validateRequest = (schema, property = 'body') => {
 module.exports = {
     validateRequest,
     newTaskSchema,
-    updateCompletenessSchema,
-    updateTaskNameSchema,
+    updateTaskSchema,
     idSchema
 }

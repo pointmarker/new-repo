@@ -28,5 +28,15 @@ class NotFoundError extends AppError{
         super(message, 404, "NOT_FOUND", details)
     }
 }
+class ClientError extends AppError{
+    constructor(message = "Client did wrong", details = []){
+        super(message, 400,"CLIENT_ERROR",details)
+    }
+}
 
-module.exports = {AppError, ValidationError, DatabaseError, NotFoundError}
+class RedisError extends AppError{
+    constructor(message = "Redis client errors", details = []){
+        super(message, 500,"REDIS_ERROR",details)
+    }
+}
+module.exports = {AppError, ValidationError, DatabaseError, NotFoundError,ClientError, RedisError}
