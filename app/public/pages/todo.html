@@ -7,7 +7,7 @@
 </head>
 <body>
     <div id="result-container">
-        <div id="">
+        <div>
             <p>title: </p> <p id="title"></p>
             <p>description: </p> <p id="description"></p>
             <label for="completed">completed: </label><div name="completed" >
@@ -20,47 +20,6 @@
         <button id="deleteBtn">delete</button>
         <button id="tasksBtn">back to tasks</button>
     </div>
-    <script>
-        window.onload = async() => {
-            const res = await fetch('/api/todo/', {
-                method: 'GET'
-            })
-
-            if(!res.ok) {
-                throw new Error('could not fetched a task from api')
-                window.location.href = "/todos"
-            }
-
-            const data = await res.json()
-            const task = data.data;
-
-            const {title, description, completed} = task
-
-            const titleContainer = document.getElementById('title')
-            const descriptionContainer = document.getElementById('description')
-            const completedContainer = document.getElementById('completed')
-
-            titleContainer.textContent = title
-            descriptionContainer.textContent = description
-            completedContainer.checked = !!completed // bu kullanım çok modern
-
-        }
-
-
-        const buttonContainer = document.getElementById('button-container')
-
-        buttonContainer.addEventListener("click", async(e) => {
-            if(e.target.id == "updateBtn"){
-                const res = await fetch('/api/todo/id')
-
-                // burayı tamamla
-            }else if(e.target.id == "deleteBtn"){
-                // burayı tamamla
-
-            }else if(e.target.id == "tasksBtn"){
-                window.location.href = "/todos"
-            }
-        })
-    </script>
+   <script src="../js/todo.js"></script>
 </body>
 </html>

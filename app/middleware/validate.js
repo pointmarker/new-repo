@@ -14,7 +14,8 @@ const newTaskSchema = () => {
 const updateTaskSchema = () => {
     joi.object({
         title: joi.string().min(1).max(100).alphanum(),
-        completed: joi.boolean()
+        description: joi.string().alphanum().min(1).max(10000).required(),
+        completed: joi.boolean().required()
     })
 }
 const idSchema = () => {

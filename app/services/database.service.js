@@ -4,67 +4,49 @@ const {ObjectId} = require('mongodb')
 const { DatabaseError, ClientError } = require("../services/error.service");
 const { getRedisClient } = require("../config/redis");
 
-async function haveAllTasks(sortBy,skip, cacheSkip,limit){
+
+async function haveTaskCount(redis){
+    const db = getDb();
+
+    let taskCount = await redis.get('taskCount')
+    if(!taskCount){
+        taskCount = await db.collection(MONGO_COLLECTION).countDocuments({})
+        await redis.set('taskCount',taskCount, "EX",300)
+    }
+
+    return JSON.parse(taskCount)
+}
+async function haveAllTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
+    let sortDirective;
+
+    const sortOptions = {
+        "a-z": {title: 1},
+        "z-a": {title: -1},
+        "uncompleted-first": {completed: -1},
+        "completed-first": {completed: 1},
+        "news-first": {createdAt: -1},
+        "olds-first": {createdAt: 1}
+    }
+
+    sortDirective = sortOptions[sortBy] || {createdAt: -1}
 
     const redis = getRedisClient()
-    const pages = await redis.get('cachedPages')
-
-    const cachedPages = JSON.parse(pages)
-
-    let sortDirective;
-    switch (sortBy) {
-        case "a-z":
-        sortDirective = {title: 1}
-        break;
-        case "z-a":
-        sortDirective = {title: -1}
-        break;
-        case "uncompleted-first":
-        sortDirective = {completed : -1}
-        break;
-        case "completed-first":
-        sortDirective = {completed: 1}
-        break;
-        case "news-first":
-        sortDirective = {createdAt: -1}
-        break;
-        case "olds-first":
-        sortDirective = {createdAt: 1}
-        break;
-    default:
-        sortDirective = {createdAt: -1}
-        break;
-}
-
     const db = getDb()
-
-    const tasks = await db.collection(MONGO_COLLECTION)
-                            .find({})
-                            .sort(sortDirective)
-                            .skip(skip)
-                            .limit(limit)
-                            .toArray();
 
     const cachedTasks = await db.collection(MONGO_COLLECTION)
                                 .find({})
                                 .sort(sortDirective)
                                 .skip(cacheSkip)
-                                .limit(limit * 5)
+                                .limit(limitVal * cacheLimitCount)
                                 .toArray();
 
-    await redis.set('cachedTasks',cachedTasks, "EX", 200)
+    await redis.set(`cachedTasks:${page}&${limitVal}&${sortBy}`,JSON.stringify(cachedTasks), "EX", 200)
 
-   
-    if(await redis.exists('taskCount')){
-        taskCount = await db.collection(MONGO_COLLECTION)
-                                .countDocuments({})
-        await redis.set('taskCount',taskCount, "EX",300)
-    }
-
-    
+    let tasks = cachedTasks.slice((page - 1) * limitVal,(page) * limitVal )
+    let taskCount = await haveTaskCount(redis)
 
     const tasksDetails = {
-        allTasks: tasks,
+        tasks: tasks,
         taskCount: taskCount
     }
 
@@ -89,17 +71,15 @@ async function addTask(title, description, completed){
     }
     
 }
-async function updateTask(id,title, completed){
+async function updateTask(id,title,description, completed){
     try {
         const db = getDb();
         const objectId = new ObjectId(id)
 
-        const updatedField = {}
-        if(title) updatedField.title = title
-        if(completed !== "") updatedField.completed = completed
-
-        if(Object.keys(updatedField).length == 0){
-            throw new ClientError('nothing to update')
+        const updatedField = {
+            title,
+            description,
+            completed
         }
 
         const res = await db.collection(MONGO_COLLECTION).updateOne({_id: objectId},{
@@ -136,4 +116,5 @@ async function haveTaskById(id){
     if(!task) return new DatabaseError('there is no task')
     return task
 }
-module.exports = {addTask,updateTask,deleteTask, haveAllTasks, haveTaskById}
+
+module.exports = {addTask,updateTask,deleteTask, haveAllTasks, haveTaskById, haveTaskCount}

@@ -6,8 +6,14 @@
     <title>Document</title>
 </head>
 <body>
-    <script>
-        window.location.href = "/todos"
-    </script>
+    <form id="post-task-form">
+        <label for="title">title</label>
+        <input type="text" value="" required>
+        <label for="description">description</label>
+        <textarea name="description" value="" required></textarea>
+        <label for="">completed: </label>
+        <input type="checkbox" value=false>
+        <button type="submit">submit</button>
+    </form>
 </body>
 </html>
