@@ -6,7 +6,6 @@
  * using in server.js
  */
 
-
 const {MongoClient, ServerApiVersion} = require('mongodb');
 const { DatabaseError } = require('../services/error.service');
 const { MONGO_CLUSTER, MONGO_URI } = require('../environment/environment');

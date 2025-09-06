@@ -3,20 +3,10 @@ const { MONGO_COLLECTION } = require("../environment/environment")
 const {ObjectId} = require('mongodb')
 const { DatabaseError, ClientError } = require("../services/error.service");
 const { getRedisClient } = require("../config/redis");
+const { updateTaskCountOnCache, haveTaskCountOnCaches } = require("./redis.service");
 
 
-async function haveTaskCount(redis){
-    const db = getDb();
-
-    let taskCount = await redis.get('taskCount')
-    if(!taskCount){
-        taskCount = await db.collection(MONGO_COLLECTION).countDocuments({})
-        await redis.set('taskCount',taskCount, "EX",300)
-    }
-
-    return JSON.parse(taskCount)
-}
-async function haveAllTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
+async function haveSpecificTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
     let sortDirective;
 
     const sortOptions = {
@@ -28,8 +18,21 @@ async function haveAllTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
         "olds-first": {createdAt: 1}
     }
 
+    await redis.set("sortOptions", sortOptions, "EX", 800, "NX")
+
     sortDirective = sortOptions[sortBy] || {createdAt: -1}
 
+    const dbIndexes = await db.collection(MONGO_COLLECTION).indexes();
+
+    if(dbIndexes.length == 1){
+        for(const key of Object.keys(sortOptions)){
+            await db.collection(MONGO_COLLECTION).createIndex(sortOptions[key],{
+                                                                                name: key,
+                                                                                expiryAfterSecconds: 5000
+                                                                            })
+        }
+    }
+    
     const redis = getRedisClient()
     const db = getDb()
 
@@ -41,9 +44,9 @@ async function haveAllTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
                                 .toArray();
 
     await redis.set(`cachedTasks:${page}&${limitVal}&${sortBy}`,JSON.stringify(cachedTasks), "EX", 200)
-
+    
     let tasks = cachedTasks.slice((page - 1) * limitVal,(page) * limitVal )
-    let taskCount = await haveTaskCount(redis)
+    let taskCount = await haveTaskCountOnCaches()
 
     const tasksDetails = {
         tasks: tasks,
@@ -52,7 +55,6 @@ async function haveAllTasks(sortBy, cacheSkip,limitVal, cacheLimitCount, page){
 
     return tasksDetails
 }
-
 async function addTask(title, description, completed){
     
     try {
@@ -101,6 +103,9 @@ async function deleteTask(id){
         const db = getDb();
         const objectId = new ObjectId(id)
 
+        
+        await updateTaskCountOnCache()
+
         const res = await db.collection(MONGO_COLLECTION).deleteOne({_id: objectId})
         if(res.deletedCount !== 1) throw new DatabaseError("task not found")
         
@@ -117,4 +122,17 @@ async function haveTaskById(id){
     return task
 }
 
-module.exports = {addTask,updateTask,deleteTask, haveAllTasks, haveTaskById, haveTaskCount}
+async function haveTaskByLocationOnDb(skip,sortBy){
+
+    const db = getDb()
+    const targetTask = await db.collection(MONGO_COLLECTION)
+                                .find({})
+                                .sort(sortBy)
+                                .skip(skip)
+                                .limit(1)
+                                .toArray();
+
+    return targetTask
+}
+
+module.exports = {addTask,updateTask,deleteTask, haveSpecificTasks, haveTaskById, haveTaskByLocationOnDb}
