@@ -39,5 +39,6 @@ async function closeRedis(){
     }
 }
 
+
 module.exports = {startRedis, closeRedis, getRedisClient}
 

@@ -3,26 +3,20 @@ joi.objectId = require('joi-objectid')(joi)
 
 const {ValidationError} = require('../services/error.service')
 
-const newTaskSchema = () => {
-    return joi.object({
-        title: joi.string().min(1).max(100).alphanum().required(),
-        description: joi.string().min(1).alphanum(),
-        completed: joi.boolean().default(false).required(),
-        createdAt: joiDate.date().format('YYYY-MM-DD').required()
-    })
-}
-const updateTaskSchema = () => {
-    joi.object({
-        title: joi.string().min(1).max(100).alphanum(),
-        description: joi.string().alphanum().min(1).max(10000).required(),
+const newTaskSchema = joi.object({
+        title: joi.string().min(1).max(100).required(),
+        description: joi.string().min(1),
+        completed: joi.boolean().default(false).required()
+        // createdAt: joiDate.date().format('YYYY-MM-DD').required()
+})
+const updateTaskSchema =joi.object({
+        title: joi.string().min(1).max(100).required(),
+        description: joi.string().min(1).max(10000).required(),
         completed: joi.boolean().required()
     })
-}
-const idSchema = () => {
-    joi.object({
+const idSchema = joi.object({
         id: joi.objectId().required()
     })
-}
 
 const validateRequest = (schema, property = 'body') => {
     return(req,res,next) => {
@@ -42,7 +36,7 @@ const validateRequest = (schema, property = 'body') => {
                 message: detail.message
             }));
 
-            return  next(new ValidationError("",errorDetails))
+            return  next(new ValidationError("cant validate","validate.js",errorDetails))
         }
         req[property] = value
         next()

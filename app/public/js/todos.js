@@ -1,5 +1,13 @@
 window.onload = async() => {
-    const res = await fetch('/api/todos',{
+    const queryString = window.location.search
+
+    const params = new URLSearchParams(queryString)
+
+    const paramspage = parseInt(params.get('page')) || 1;
+    const paramslimit = parseInt(params.get('limit')) || 10;
+    const paramssort = params.get('sort') || 'a-z';
+    
+    const res = await fetch(`/api/todos?page=${paramspage}&limit=${paramslimit}&sortBy=${paramssort}`,{
         method: 'GET'
     })
 
@@ -21,7 +29,7 @@ window.onload = async() => {
      */
     function havingPagesNavLogic(){
         const tableEl = document.getElementById('pages-navigation')
-        const tdEl = document.createElement('td')
+        let tdEl = document.createElement('td')
 
         tdEl.textContent = 1
         tableEl.appendChild(tdEl)
@@ -42,6 +50,7 @@ window.onload = async() => {
             }
         }
 
+        tdEl = document.createElement('td')
         tdEl.textContent = totalPageCount;
         tableEl.appendChild(tdEl)
 
@@ -58,22 +67,21 @@ window.onload = async() => {
 
     havingPagesNavLogic()
 
+      // adding task count info to page
+
+      const taskCountContainer = document.getElementById('task-count-container')
+      const pEl = document.createElement('p')
+      pEl.textContent = totalTaskCount
+      taskCountContainer.appendChild(pEl)
+
      /**
      * 
      */
     
     /**
      * 
-     * creating a tasks by page container
+     * creating tasks by page container
      */
-
-
-    // adding task count info to page
-
-    const taskCountContainer = document.getElementById('task-count-container')
-    const pEl = document.createElement('p')
-    pEl.textContent = totalTaskCount
-    taskCountContainer.appendChild(pEl)
 
     // visualizating tasks
 

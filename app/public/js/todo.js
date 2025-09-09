@@ -1,4 +1,3 @@
-
 const taskId = window.location.pathname.split('/').pop()
 let lastQueriedUrl;
 window.onload = async() => {
@@ -39,7 +38,7 @@ buttonContainer.addEventListener("click", async(e) => {
         const completedVal = document.getElementById('completed').value
 
         if(!titleVal && !descVal){
-            alert('there are empty boxes trying to savei şt is impossible')
+            alert('there are empty boxes trying to save it is impossible')
             window.location.href = `/todo/${taskId}`
             throw new Error('there is no infos')
         }
@@ -70,24 +69,24 @@ buttonContainer.addEventListener("click", async(e) => {
 
         alert('deleting successfully done')
 
-        window.location.href = lastQueriedUrl ||"/todos"
+        window.location.href = lastQueriedUrl
 
     }else if(e.target.id == "tasksBtn"){
-        window.location.href = lastQueriedUrl ||"/todos"
+        window.location.href = lastQueriedUrl || "/todos"
     }
 })
 
-buttonContainer.addEventListener('dblclik', (e) => {
+buttonContainer.addEventListener('dblclick', (e) => {
 
     if(["title", "description"].includes(e.target.id)){
-        createInputEntryEl(e.target,e.target.id)
+        createInputEntryEl(e.target,e.target.tagName)
     }
 
     function createInputEntryEl(el,name){
 
         const inputEl = document.createElement('input')
         inputEl.value = el.textContent
-        inputEl.name = name
+        inputEl.name = name.toLowerCase()
 
         inputEl.addEventListener('blur', () => {
             el.textContent = inputEl.value

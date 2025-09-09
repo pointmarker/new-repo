@@ -1,5 +1,6 @@
 const { source_path } = require('../environment/environment')
-const {AppError, ValidationError, NotFoundError, DatabaseError}= require('../services/error.service')
+const {AppError, ValidationError, NotFoundError, DatabaseError, RedisError, ClientError}= require('../services/error.service')
+const { errorLog } = require('../services/logger.service')
 
 function errorHandler(err,req,res,next){
 
@@ -8,25 +9,60 @@ function errorHandler(err,req,res,next){
     const message = err.message || "Something went wrong.."
 
     // buraya logger ile logla
-    if(err instanceof AppError){
-        
-    }else if (err instanceof NotFoundError){
-
+    if (err instanceof NotFoundError){
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "NotFoundError"
+        )
     }else if(err instanceof ValidationError){
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "ValidationError"
+        )
 
     }else if(err instanceof DatabaseError){
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "DatabaseError"
+        )
+
+    }else if(err instanceof RedisError){
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "RedisError"
+        )
+
+    }else if(err instanceof ClientError){
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "ClientError"
+        )
 
     }else{
-
+        errorLog(
+            err.message,
+            err.stack,
+            req.ip,
+            "AppError"
+        )
     }
 
     const response = {
         success: false,
         errorCode,
-        message
+        message,
+        details: err.details || "no extra detail"
     }
-
-    if(err.details) response.details = err.details
     
     res.status(statusCode).json(response)
 }

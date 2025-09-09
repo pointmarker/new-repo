@@ -1,16 +1,14 @@
 const { getRedisClient } = require("../config/redis");
 const { addTask, updateTask, deleteTask, haveTaskById, haveSpecificTasks } = require("../services/database.service");
-const { DatabaseError, AppError, ClientError } = require("../services/error.service");
-const { haveTaskCountOnCaches } = require("../services/redis.service");
+const { AppError, ClientError } = require("../services/error.service");
+const { haveTaskCountOnCaches, updateTaskCountOnCache } = require("../services/redis.service");
 
 async function postTodoController(req,res,next){
     try {
-        const {title, description, completed = false} = req.body
-        const response = await addTask(title,description, completed)
+        const {title, description, completed} = req.body
+        await addTask(title,description, completed)
 
-        if(!response) return next(new DatabaseError("cant add task to database"))
-
-        res.status(200).json({
+        res.status(201).json({
             success:true,
             message: "posting task action successfully done"
         })
@@ -27,7 +25,7 @@ async function patchTodoController(req,res,next){
         const {title, description, completed} = req.body
 
         if(!title || !completed || !description) return next(new ClientError)
-        await updateTask(id, title, completed)
+        await updateTask(id, title, description, completed)
 
         res.status(200).json({
             success:true,
@@ -56,9 +54,8 @@ async function deleteTodoController(req,res,next){
 async function getTodoController(req,res,next){
     try {
         const task = await haveTaskById(req.params.id)
-        if(!task) next(new DatabaseError)
-
         const redis = getRedisClient()
+
         const lastQueriedUrl = await redis.get('lastQueriedUrl')
 
         res.status(200).json({
@@ -87,7 +84,7 @@ async function getTodosController(req,res,next){
         // specify properties
         const page = Math.max(1, parseInt(req.query.page) || 1)
 
-        const requestedLimit = parseInt(req.query.limit || 10)
+        const requestedLimit = parseInt(req.query.limit)  || 10
         const limit = [10,20,50].includes(requestedLimit) ? requestedLimit : 10
 
         // this is for how many page will be cached according to which page do you want to see
@@ -97,10 +94,8 @@ async function getTodosController(req,res,next){
         const skip = (page - 1) * limit
         // this is for defining how caching will skip
         const cacheSkip = Math.max(0,(page -3 ) * limit)
-
         // this is for client to read the url after he update/delete task redirection 
         await redis.set('lastQueriedUrl',`/todos?page=${page}&limit=${limit}&sortBy=${sortBy}`, "EX", 400)
-
         // the control for same pages are cached before ?
         let cachedPages = await redis.get(`cachedPages`)
         
@@ -113,29 +108,28 @@ async function getTodosController(req,res,next){
 
         if(!shouldUpdate){
             // the pagination of the page already cached
-            
-            let tasks = await redis.get(`cachedTasks:${page}&${limit}&${sortBy}`)
-            tasks = JSON.parse(tasks)
-            tasks = tasks.slice(skip,(page) * limit )
-
-            const taskCount = await haveTaskCountOnCaches()
-
-            return res.status(200).json({
-                page,
-                limit: limit,
-                sortBy,
-                totalTaskCount: taskCount,
-                totalPageCount: Math.ceil(taskCount / limit),
-                data: tasks
-            })
+            let tasks = await redis.get(`cachedTasks:/todos?page=${page}&limit=${limit}&sortBy=${sortBy}`)
+            if(tasks) {
+                tasks = JSON.parse(tasks)
+                tasks = tasks.slice(skip,(page) * limit )
+    
+                const taskCount = await haveTaskCountOnCaches()
+    
+                return res.status(200).json({
+                    page,
+                    limit,
+                    sortBy,
+                    totalTaskCount: taskCount,
+                    totalPageCount: Math.ceil(taskCount / limit),
+                    data: tasks
+                })
+            }  
         }
+        cachedPages = cacheLimitCount == 5 ? Array.from({length: 5},(_,i) => (page - 2) + i) : [1,2,3]
+        await redis.set('cachedPages', JSON.stringify(cachedPages), "EX", 300)
+        
         // get specific data from database
         const tasksDetails = await haveSpecificTasks(sortBy, cacheSkip,limit,cacheLimitCount, page);
-
-        cachedPages = cacheLimitCount > 3 ? Array.from({length: 5},(_,i) => (page - 2) + i) : [1,2,3]
-        await redis.set('cachedPages', JSON.stringify(cachedPages), "EX", 300)
-
-        if(!tasksDetails) next(new DatabaseError('cant reach to task collection', "api.controller"));
 
         // sent response
         const {tasks, taskCount} = tasksDetails

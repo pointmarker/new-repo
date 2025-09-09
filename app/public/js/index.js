@@ -18,8 +18,13 @@ postForm.addEventListener('submit', async(e) => {
 
     if(!res.ok) throw new Error('cant posting')
 
+    const data = await res.json()
+    if(data.success){
+        alert('ekleme başarılı')
+    }
+
     postForm.reset()
-
-    window.location.href = "/todos"
-
 })
+
+document.getElementById('all-tasks-button').onclick = () => {
+}

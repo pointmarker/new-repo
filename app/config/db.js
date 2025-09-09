@@ -8,12 +8,11 @@
 
 const {MongoClient, ServerApiVersion} = require('mongodb');
 const { DatabaseError } = require('../services/error.service');
-const { MONGO_CLUSTER, MONGO_URI } = require('../environment/environment');
 let client; 
 
-async function mongoStart(){
+async function mongoStart(uri){
     //create a client
-    client = new MongoClient(MONGO_URI,{
+    client = new MongoClient(uri,{
         serverApi: {
             version: ServerApiVersion.v1,
             strict: true,
@@ -47,8 +46,8 @@ async function mongoClose(){
 }
 
 let db;
-async function connectDb(client) {
-    db = client.db(MONGO_CLUSTER)
+async function connectDb(client, dbName = "testDb") {
+    db = client.db(dbName)
 }
 
 function getDb(){
@@ -57,8 +56,8 @@ function getDb(){
 }
 
 // connect mongo client
-const mongoConnect = async() => {
-    const client = await mongoStart()
+const mongoConnect = async(uri) => {
+    const client = await mongoStart(uri)
     connectDb(client);
 }
 
